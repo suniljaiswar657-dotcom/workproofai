@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
 
 type JobStatus = "In progress" | "Awaiting approval" | "Completed";
 type PaymentStatus = "Unpaid" | "Partially paid" | "Paid";
@@ -28,7 +29,7 @@ export default function Home(){
  const stats=useMemo(()=>({total:jobs.length,open:jobs.filter(j=>j.status!=="Completed").length,pending:jobs.reduce((s,j)=>s+j.amount-j.paid,0),completed:jobs.filter(j=>j.status==="Completed").length}),[jobs]);
  const filtered=jobs.filter(j=>(filter==="All jobs"||j.status===filter||j.payment===filter)&&[j.title,j.customer,j.id,j.location].join(" ").toLowerCase().includes(query.toLowerCase()));
  function notify(s:string){setToast(s);window.setTimeout(()=>setToast(""),2600);}
- function createJob(e:React.FormEvent){e.preventDefault();const amount=Number(form.amount);if(!form.title.trim()||!form.customer.trim()||!amount||amount<1){notify("Add a job title, customer and valid amount.");return;}const job:Job={id:"WP-"+(1050+jobs.length),title:form.title.trim(),customer:form.customer.trim(),phone:form.phone.trim(),location:form.location.trim(),amount,paid:0,dueDate:form.dueDate||today(),status:"In progress",payment:"Unpaid",notes:form.notes.trim(),createdAt:today(),evidence:[]};setJobs(p=>[job,...p]);setForm({title:"",customer:"",phone:"",location:"",amount:"",dueDate:"",notes:""});setShowCreate(false);setActive(job.id);notify("Job created successfully.");}
+ function createJob(e:FormEvent){e.preventDefault();const amount=Number(form.amount);if(!form.title.trim()||!form.customer.trim()||!amount||amount<1){notify("Add a job title, customer and valid amount.");return;}const job:Job={id:"WP-"+(1050+jobs.length),title:form.title.trim(),customer:form.customer.trim(),phone:form.phone.trim(),location:form.location.trim(),amount,paid:0,dueDate:form.dueDate||today(),status:"In progress",payment:"Unpaid",notes:form.notes.trim(),createdAt:today(),evidence:[]};setJobs(p=>[job,...p]);setForm({title:"",customer:"",phone:"",location:"",amount:"",dueDate:"",notes:""});setShowCreate(false);setActive(job.id);notify("Job created successfully.");}
  function update(id:string,patch:Partial<Job>){setJobs(p=>p.map(j=>j.id===id?{...j,...patch}:j));}
  function addEvidence(id:string,files:FileList|null){if(!files?.length)return;const added=Array.from(files).map(f=>({name:f.name,size:f.size,type:f.type}));const j=jobs.find(x=>x.id===id);if(j)update(id,{evidence:[...j.evidence,...added]});notify(added.length+" evidence file(s) added.");}
  function exportCsv(){const rows=[["Job ID","Job","Customer","Phone","Location","Amount","Paid","Balance","Status","Payment","Due date"],...jobs.map(j=>[j.id,j.title,j.customer,j.phone,j.location,j.amount,j.paid,j.amount-j.paid,j.status,j.payment,j.dueDate])];const csv=rows.map(r=>r.map(v=>'"'+String(v??"").replaceAll('"','""')+'"').join(",")).join("\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="workproof-jobs.csv";a.click();URL.revokeObjectURL(a.href);notify("CSV report exported.");}
